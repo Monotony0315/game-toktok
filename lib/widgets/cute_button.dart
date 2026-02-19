@@ -64,7 +64,7 @@ class _CuteButtonState extends State<CuteButton>
   void _onTapUp(TapUpDetails details) {
     if (!widget.isDisabled && !widget.isLoading) {
       _controller.reverse();
-      _audio.playSfx('click');
+      _audio.click();
       widget.onPressed?.call();
     }
   }
@@ -192,7 +192,7 @@ class _CuteIconButtonState extends State<CuteIconButton>
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) {
         _controller.reverse();
-        _audio.playSfx('click');
+        _audio.click();
         widget.onPressed?.call();
       },
       onTapCancel: () => _controller.reverse(),
@@ -278,7 +278,7 @@ class _GameCardButtonState extends State<GameCardButton>
       onTapUp: (_) {
         if (!widget.isLocked) {
           _controller.reverse();
-          _audio.playSfx('pop');
+          _audio.pop();
           widget.onPressed?.call();
         }
       },

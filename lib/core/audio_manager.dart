@@ -1,18 +1,14 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'dart:async';
+import 'storage.dart';
 
 /// Audio Manager for Game-TokTok
-/// Handles background music, sound effects, and Toki voice
+/// Handles background music, sound effects, and Toki voice using Flame Audio
 class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
   factory AudioManager() => _instance;
   AudioManager._internal();
 
-  // Audio players
-  late AudioPlayer _bgmPlayer;
-  late AudioPlayer _sfxPlayer;
-  late AudioPlayer _voicePlayer;
-  
   // State
   bool _isInitialized = false;
   bool _isMuted = false;
@@ -23,30 +19,37 @@ class AudioManager {
   // Current BGM track
   String? _currentBgm;
 
-  // Sound effect cache
+  // Sound effect cache - maps sound keys to file paths
   final Map<String, String> _soundPaths = {
     // UI Sounds
-    'pop': 'sounds/pop.mp3',
-    'click': 'sounds/click.mp3',
-    'success': 'sounds/success.mp3',
-    'fail': 'sounds/fail.mp3',
-    'win': 'sounds/win.mp3',
-    'level_up': 'sounds/level_up.mp3',
+    'pop': 'pop.mp3',
+    'click': 'click.mp3',
+    'success': 'success.mp3',
+    'fail': 'fail.mp3',
+    'win': 'win.mp3',
+    'level_up': 'level_up.mp3',
     
     // Game Sounds
-    'merge': 'sounds/merge.mp3',
-    'drop': 'sounds/drop.mp3',
-    'splash': 'sounds/splash.mp3',
-    'eat': 'sounds/eat.mp3',
-    'move': 'sounds/move.mp3',
+    'merge': 'merge.mp3',
+    'drop': 'drop.mp3',
+    'splash': 'splash.mp3',
+    'eat': 'eat.mp3',
+    'move': 'move.mp3',
+    
+    // Combo sounds
+    'combo_1': 'combo1.mp3',
+    'combo_2': 'combo2.mp3',
+    'combo_3': 'combo3.mp3',
+    'combo_4': 'combo4.mp3',
+    'combo_5': 'combo5.mp3',
     
     // Toki Voice
-    'toki_greeting': 'sounds/toki_greeting.mp3',
-    'toki_happy': 'sounds/toki_happy.mp3',
-    'toki_sad': 'sounds/toki_sad.mp3',
-    'toki_encourage': 'sounds/toki_encourage.mp3',
-    'toki_congrats': 'sounds/toki_congrats.mp3',
-    'toki_click': 'sounds/toki_click.mp3',
+    'toki_greeting': 'toki_greeting.mp3',
+    'toki_happy': 'toki_happy.mp3',
+    'toki_sad': 'toki_sad.mp3',
+    'toki_encourage': 'toki_encourage.mp3',
+    'toki_congrats': 'toki_congrats.mp3',
+    'toki_click': 'toki_click.mp3',
   };
 
   // Getters
@@ -54,20 +57,15 @@ class AudioManager {
   double get bgmVolume => _bgmVolume;
   double get sfxVolume => _sfxVolume;
   double get voiceVolume => _voiceVolume;
+  String? get currentBgm => _currentBgm;
 
   /// Initialize the audio manager
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _bgmPlayer = AudioPlayer();
-    _sfxPlayer = AudioPlayer();
-    _voicePlayer = AudioPlayer();
-
-    // Configure players
-    await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
-    await _sfxPlayer.setReleaseMode(ReleaseMode.release);
-    await _voicePlayer.setReleaseMode(ReleaseMode.release);
-
+    // Initialize Flame Audio
+    FlameAudio.bgm.initialize();
+    
     // Set initial volumes
     await _updateVolumes();
 
@@ -79,9 +77,25 @@ class AudioManager {
     if (!_isInitialized) return;
     
     final effectiveMute = _isMuted ? 0.0 : 1.0;
-    await _bgmPlayer.setVolume(_bgmVolume * effectiveMute);
-    await _sfxPlayer.setVolume(_sfxVolume * effectiveMute);
-    await _voicePlayer.setVolume(_voiceVolume * effectiveMute);
+    FlameAudio.bgm.audioPlayer.setVolume(_bgmVolume * effectiveMute);
+  }
+
+  /// Preload commonly used sounds for better performance
+  Future<void> preloadSounds() async {
+    if (!_isInitialized) return;
+    
+    // Preload essential sounds
+    final essentialSounds = ['click', 'pop', 'success', 'fail'];
+    for (final sound in essentialSounds) {
+      final path = _soundPaths[sound];
+      if (path != null) {
+        try {
+          await FlameAudio.audioCache.load('sounds/$path');
+        } catch (e) {
+          print('Failed to preload sound: $sound');
+        }
+      }
+    }
   }
 
   /// Play background music
@@ -92,18 +106,9 @@ class AudioManager {
     _currentBgm = track;
 
     try {
-      if (fadeIn) {
-        await _bgmPlayer.setVolume(0);
-        await _bgmPlayer.play(AssetSource('sounds/bgm/$track.mp3'));
-        
-        // Fade in
-        for (var i = 0; i <= 10; i++) {
-          await Future.delayed(const Duration(milliseconds: 50));
-          await _bgmPlayer.setVolume((_bgmVolume * i / 10) * (_isMuted ? 0 : 1));
-        }
-      } else {
-        await _bgmPlayer.play(AssetSource('sounds/bgm/$track.mp3'));
-      }
+      if (_isMuted) return;
+      
+      await FlameAudio.bgm.play('sounds/bgm/$track.mp3', volume: _bgmVolume);
     } catch (e) {
       print('Error playing BGM: $e');
     }
@@ -114,14 +119,7 @@ class AudioManager {
     if (!_isInitialized) return;
     
     try {
-      if (fadeOut) {
-        final currentVol = await _bgmPlayer.volume;
-        for (var i = 10; i >= 0; i--) {
-          await _bgmPlayer.setVolume(currentVol * i / 10);
-          await Future.delayed(const Duration(milliseconds: 50));
-        }
-      }
-      await _bgmPlayer.stop();
+      await FlameAudio.bgm.stop();
       _currentBgm = null;
     } catch (e) {
       print('Error stopping BGM: $e');
@@ -131,14 +129,14 @@ class AudioManager {
   /// Pause background music
   Future<void> pauseBgm() async {
     if (!_isInitialized) return;
-    await _bgmPlayer.pause();
+    await FlameAudio.bgm.pause();
   }
 
   /// Resume background music
   Future<void> resumeBgm() async {
     if (!_isInitialized) return;
-    if (!_isMuted) {
-      await _bgmPlayer.resume();
+    if (!_isMuted && _currentBgm != null) {
+      await FlameAudio.bgm.resume();
     }
   }
 
@@ -154,8 +152,7 @@ class AudioManager {
     }
 
     try {
-      await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource(path));
+      await FlameAudio.play('sounds/$path', volume: _sfxVolume);
     } catch (e) {
       print('Error playing SFX: $e');
     }
@@ -170,8 +167,7 @@ class AudioManager {
     if (path == null) return;
 
     try {
-      await _voicePlayer.stop();
-      await _voicePlayer.play(AssetSource(path));
+      await FlameAudio.play('sounds/$path', volume: _voiceVolume);
     } catch (e) {
       print('Error playing voice: $e');
     }
@@ -180,8 +176,8 @@ class AudioManager {
   /// Play random Toki greeting
   Future<void> playRandomGreeting() async {
     final greetings = ['toki_greeting', 'toki_happy', 'toki_click'];
-    final random = DateTime.now().millisecond % greetings.length;
-    await playVoice(greetings[random]);
+    final index = DateTime.now().millisecond % greetings.length;
+    await playVoice(greetings[index]);
   }
 
   /// Play random encouragement
@@ -191,10 +187,8 @@ class AudioManager {
 
   /// Play success sound with Toki congrats
   Future<void> playSuccess() async {
-    await Future.wait([
-      playSfx('success'),
-      playVoice('toki_congrats'),
-    ]);
+    await playSfx('success');
+    await playVoice('toki_congrats');
   }
 
   /// Toggle mute
@@ -203,10 +197,14 @@ class AudioManager {
     await _updateVolumes();
     
     if (_isMuted) {
-      await _bgmPlayer.pause();
+      await pauseBgm();
     } else {
-      await _bgmPlayer.resume();
+      await resumeBgm();
     }
+    
+    // Save to storage
+    final storage = GameStorage();
+    await storage.setSoundEnabled(!_isMuted);
   }
 
   /// Set mute state
@@ -215,9 +213,9 @@ class AudioManager {
     await _updateVolumes();
     
     if (_isMuted) {
-      await _bgmPlayer.pause();
+      await pauseBgm();
     } else {
-      await _bgmPlayer.resume();
+      await resumeBgm();
     }
   }
 
@@ -230,27 +228,24 @@ class AudioManager {
   /// Set SFX volume (0.0 to 1.0)
   Future<void> setSfxVolume(double volume) async {
     _sfxVolume = volume.clamp(0.0, 1.0);
-    await _updateVolumes();
   }
 
   /// Set voice volume (0.0 to 1.0)
   Future<void> setVoiceVolume(double volume) async {
     _voiceVolume = volume.clamp(0.0, 1.0);
-    await _updateVolumes();
   }
 
-  /// Dispose all players
+  /// Dispose audio resources
   Future<void> dispose() async {
     if (!_isInitialized) return;
     
-    await _bgmPlayer.dispose();
-    await _sfxPlayer.dispose();
-    await _voicePlayer.dispose();
+    await FlameAudio.bgm.stop();
+    await FlameAudio.bgm.dispose();
     _isInitialized = false;
   }
 }
 
-/// Extension for easy access
+/// Extension for easy access to common sounds
 extension AudioManagerExtension on AudioManager {
   /// Quick play methods for common sounds
   Future<void> pop() => playSfx('pop');
@@ -260,4 +255,8 @@ extension AudioManagerExtension on AudioManager {
   Future<void> win() => playSfx('win');
   Future<void> merge() => playSfx('merge');
   Future<void> drop() => playSfx('drop');
+  Future<void> move() => playSfx('move');
+  Future<void> splash() => playSfx('splash');
+  Future<void> eat() => playSfx('eat');
+  Future<void> levelUp() => playSfx('level_up');
 }

@@ -1,6 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
-import 'animated_background.dart';
 
 /// Toki Character Widget with animations
 /// Toki is a cute bunny mascot with round eyes and rosy cheeks
