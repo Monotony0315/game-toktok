@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/audio_manager.dart';
-import '../core/navigation.dart';
 import '../core/theme.dart';
 import '../core/storage.dart';
 
@@ -276,10 +275,7 @@ class _GameMenuScreenState extends State<GameMenuScreen> {
   void _onGameSelected(String route) async {
     await _audio.click();
     if (mounted) {
-      TokiNavigator(context).navigateWithTransition(
-        route,
-        transition: TokiTransitionType.bouncy,
-      );
+      Navigator.pushNamed(context, route);
     }
   }
 
