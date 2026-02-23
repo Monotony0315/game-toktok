@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 import '../core/audio_manager.dart';
 import '../core/theme.dart';
-import 'snake_game.dart';
+import '../games/snake/snake_game.dart';
 
 /// Snake Game Screen - Wrapper for Flame game
 class SnakeGameScreen extends StatefulWidget {

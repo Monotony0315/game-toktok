@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flame/components.dart';
+import 'package:flame/collisions.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
-import 'package:flame/geometry.dart';
 import 'package:flutter/material.dart';
 
-class FruitMergeGame extends FlameGame with TapDetector, HasCollisionDetection {
+class FruitMergeGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   static const double spawnY = 100.0;
   static const double wallThickness = 10.0;
   static const double gameSpeed = 1.0;
@@ -99,10 +99,10 @@ class FruitMergeGame extends FlameGame with TapDetector, HasCollisionDetection {
   }
 
   @override
-  void onTapDown(TapDownInfo info) {
+  void onTapDown(TapDownEvent event) {
     if (isGameOver || !canDrop || currentFruit == null) return;
     
-    final tapX = info.eventPosition.global.x;
+    final tapX = event.localPosition.x;
     
     // Clamp to game area
     final clampedX = tapX.clamp(
@@ -121,21 +121,6 @@ class FruitMergeGame extends FlameGame with TapDetector, HasCollisionDetection {
         _spawnNextFruit();
       }
     });
-  }
-
-  @override
-  void onTapUpdate(TapUpdateInfo info) {
-    if (isGameOver || !canDrop || currentFruit == null) return;
-    
-    final tapX = info.eventPosition.global.x;
-    
-    // Clamp to game area
-    final clampedX = tapX.clamp(
-      wallThickness + currentFruit!.radius,
-      size.x - wallThickness - currentFruit!.radius,
-    );
-    
-    currentFruit!.position.x = clampedX;
   }
 
   void _checkGameState() {

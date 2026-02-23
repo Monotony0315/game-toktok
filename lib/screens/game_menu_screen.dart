@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/audio_manager.dart';
 import '../core/theme.dart';
 import '../core/storage.dart';
+import '../core/navigation.dart';
 
 /// Main game menu screen with all 6 mini-games
 class GameMenuScreen extends StatefulWidget {

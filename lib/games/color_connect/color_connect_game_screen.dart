@@ -555,7 +555,7 @@ class ColorConnectPainter extends CustomPainter {
             ..color = Colors.white.withOpacity(0.4)
             ..style = PaintingStyle.fill;
           canvas.drawCircle(
-            center - const Offset(dotRadius * 0.3, dotRadius * 0.3),
+            center - Offset(dotRadius * 0.3, dotRadius * 0.3),
             dotRadius * 0.3,
             highlightPaint,
           );

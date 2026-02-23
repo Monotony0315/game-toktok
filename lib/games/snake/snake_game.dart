@@ -19,6 +19,7 @@ class SnakeGame extends FlameGame with PanDetector, HasCollisionDetection {
   
   Vector2? _dragStart;
   Vector2? _dragEnd;
+  Vector2? _lastDragPosition;
 
   @override
   Future<void> onLoad() async {
@@ -102,13 +103,19 @@ class SnakeGame extends FlameGame with PanDetector, HasCollisionDetection {
   @override
   void onPanStart(DragStartInfo info) {
     _dragStart = info.eventPosition.global;
+    _lastDragPosition = info.eventPosition.global;
+  }
+
+  @override
+  void onPanUpdate(DragUpdateInfo info) {
+    _lastDragPosition = info.eventPosition.global;
   }
 
   @override
   void onPanEnd(DragEndInfo info) {
-    if (_dragStart == null || isGameOver) return;
-    
-    _dragEnd = info.eventPosition.global;
+    if (_dragStart == null || isGameOver || _lastDragPosition == null) return;
+
+    _dragEnd = _lastDragPosition;
     final delta = _dragEnd! - _dragStart!;
     
     // Minimum swipe distance

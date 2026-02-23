@@ -76,6 +76,24 @@ class BalloonMergeGame extends FlameGame
     world.add(balloon);
   }
 
+  void restart() {
+    removeAll(children);
+    balloons.clear();
+    score = 0;
+    isGameOver = false;
+    overlays.remove('gameOver');
+    
+    // Re-initialize world and camera
+    world = World();
+    camera = CameraComponent(world: world);
+    addAll([world, camera]);
+    camera.viewfinder.anchor = Anchor.topLeft;
+    
+    // Add boundaries and spawn balloons
+    world.add(GameBoundaries(size));
+    spawnInitialBalloons();
+  }
+
   void checkMerges() {
     for (int i = 0; i < balloons.length; i++) {
       for (int j = i + 1; j < balloons.length; j++) {
@@ -289,18 +307,19 @@ class Balloon extends PositionComponent {
       position.x = radius;
       velocity.x = velocity.x.abs() * 0.5;
     }
-    if (position.x > (parent as World).children.first.size.x - radius) {
-      position.x = (parent as World).children.first.size.x - radius;
+    final worldSize = (parent as World).children.query<GameBoundaries>().first.size;
+    if (position.x > worldSize.x - radius) {
+      position.x = worldSize.x - radius;
       velocity.x = -velocity.x.abs() * 0.5;
     }
     if (position.y < -radius * 2) {
       // Balloon floated off screen - respawn at bottom occasionally
       if (Random().nextDouble() < 0.1) {
-        position.y = (parent as World).children.first.size.y + radius;
+        position.y = worldSize.y + radius;
         velocity.y = -30 - Random().nextDouble() * 20;
       }
     }
-    if (position.y > (parent as World).children.first.size.y + radius * 2) {
+    if (position.y > worldSize.y + radius * 2) {
       position.y = -radius;
       velocity.y = 30 + Random().nextDouble() * 20;
     }
